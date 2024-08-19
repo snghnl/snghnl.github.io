@@ -1,0 +1,36 @@
+---
+layout: default
+---
+  <div class="profile">
+      <div class="profile-container">
+          <div class="profile-content">
+              hellohellohellohellohellohello
+              hellohellohellohellohellohellohellohello
+              hellohellohellohellohellohellohellohello
+              hellohellohellohellohellohellohellohello
+              hellohellohellohellohellohello
+          </div>
+        <div class="profile-image-shrink">
+            <img src="assets/images/image.png" alt="Profile Picture" class="profile-image">
+        </div>
+    </div>
+    <div class="profile-resume">
+      {{ content | markdownify }}
+    </div>
+  </div>
+
+
+
+{% if page.comments %}
+  {% include disqus_comments.html %}
+{% endif %}
+
+<div class="pagination">
+  {% if page.next.url %}
+    <a href="{{ page.next.url | prepend: site.baseurl }}" class="left arrow">&#8592;</a>
+  {% endif %}
+  {% if page.previous.url %}
+    <a href="{{ page.previous.url | prepend: site.baseurl }}" class="right arrow">&#8594;</a>
+  {% endif %}
+
+</div>
