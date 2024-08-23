@@ -32,7 +32,7 @@ jobs:
 
       - uses: stefanzweifel/git-auto-commit-action@v4
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN_FOR_GITHUB }}
         with:
           commit_message: Update Importer posts
           branch: master
