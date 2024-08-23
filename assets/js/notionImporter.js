@@ -23,13 +23,13 @@ const n2m = new NotionToMarkdown({ notionClient: notion });
 		filter: {
 			and: [
 				{
-					property: "multi_select",
+					property: "태그",
 					multi_select: {
 						contains: "blog"
 					}
 				},
 				{
-					property: "status",
+					property: "상태",
 					status: {
 						equals: "완로"
 					}
