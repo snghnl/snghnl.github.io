@@ -18,6 +18,16 @@ markdown:       kramdown
 include:
   - _pages
 
+
+- name: Build with Jekyll
+  run: |
+    bundle exec jekyll clean
+    bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
+  env:
+    JEKYLL_ENV: production
+
+
+
 # Assets
 sass:
   sass_dir:     _sass
@@ -37,7 +47,8 @@ paginate_path: /posts/page:num/
 paginate:  5
 
 # Excludes
-exclude: [ Gemfile, Gemfile.lock, tale.gemspec ]
+exclude: [ Gemfile, Gemfile.lock, tale.gemspec, vendor/]
+
 
 # Disqus (Set to your disqus id)
 disqus:         jekyll-tale
