@@ -133,7 +133,10 @@ module Faraday
         http.verify_mode = ssl_verify_mode(ssl)
         http.cert_store = ssl_cert_store(ssl)
 
-        http.cert = ssl[:client_cert] if ssl[:client_cert]
+        cert, *extra_chain_cert = ssl[:client_cert]
+        http.cert = cert if cert
+        http.extra_chain_cert = extra_chain_cert if extra_chain_cert.any?
+
         http.key = ssl[:client_key] if ssl[:client_key]
         http.ca_file = ssl[:ca_file] if ssl[:ca_file]
         http.ca_path = ssl[:ca_path] if ssl[:ca_path]
@@ -142,6 +145,7 @@ module Faraday
         http.min_version = ssl[:min_version] if ssl[:min_version]
         http.max_version = ssl[:max_version] if ssl[:max_version]
         http.verify_hostname = ssl[:verify_hostname] if verify_hostname_enabled?(http, ssl)
+        http.ciphers = ssl[:ciphers] if ssl[:ciphers]
       end
 
       def configure_request(http, req)

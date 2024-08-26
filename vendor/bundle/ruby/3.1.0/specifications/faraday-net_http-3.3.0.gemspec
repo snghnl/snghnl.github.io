@@ -1,15 +1,15 @@
 # -*- encoding: utf-8 -*-
-# stub: faraday-net_http 3.1.1 ruby lib
+# stub: faraday-net_http 3.3.0 ruby lib
 
 Gem::Specification.new do |s|
   s.name = "faraday-net_http".freeze
-  s.version = "3.1.1"
+  s.version = "3.3.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0".freeze) if s.respond_to? :required_rubygems_version=
-  s.metadata = { "changelog_uri" => "https://github.com/lostisland/faraday-net_http/releases/tag/v3.1.1", "homepage_uri" => "https://github.com/lostisland/faraday-net_http", "source_code_uri" => "https://github.com/lostisland/faraday-net_http" } if s.respond_to? :metadata=
+  s.metadata = { "changelog_uri" => "https://github.com/lostisland/faraday-net_http/releases/tag/v3.3.0", "homepage_uri" => "https://github.com/lostisland/faraday-net_http", "rubygems_mfa_required" => "true", "source_code_uri" => "https://github.com/lostisland/faraday-net_http" } if s.respond_to? :metadata=
   s.require_paths = ["lib".freeze]
   s.authors = ["Jan van der Pas".freeze]
-  s.date = "2024-07-24"
+  s.date = "2024-08-26"
   s.description = "Faraday adapter for Net::HTTP".freeze
   s.email = ["janvanderpas@gmail.com".freeze]
   s.homepage = "https://github.com/lostisland/faraday-net_http".freeze
@@ -25,10 +25,8 @@ Gem::Specification.new do |s|
   end
 
   if s.respond_to? :add_runtime_dependency then
-    s.add_development_dependency(%q<faraday>.freeze, [">= 2.5"])
     s.add_runtime_dependency(%q<net-http>.freeze, [">= 0"])
   else
-    s.add_dependency(%q<faraday>.freeze, [">= 2.5"])
     s.add_dependency(%q<net-http>.freeze, [">= 0"])
   end
 end
