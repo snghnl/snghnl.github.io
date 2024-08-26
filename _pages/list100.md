@@ -1,6 +1,6 @@
 ---
 layout: post
-# title: "list 100"
+title: "list 100"
 permalink: /list100/
 ---
 
