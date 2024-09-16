@@ -19,6 +19,7 @@ module I18n
   RESERVED_KEYS = %i[
     cascade
     deep_interpolation
+    skip_interpolation
     default
     exception_handler
     fallback
@@ -161,7 +162,7 @@ module I18n
     # or <tt>default</tt> if no translations for <tt>:foo</tt> and <tt>:bar</tt> were found.
     #   I18n.t :foo, :default => [:bar, 'default']
     #
-    # *BULK LOOKUP*
+    # <b>BULK LOOKUP</b>
     #
     # This returns an array with the translations for <tt>:foo</tt> and <tt>:bar</tt>.
     #   I18n.t [:foo, :bar]
@@ -180,7 +181,7 @@ module I18n
     # E.g. assuming the key <tt>:salutation</tt> resolves to:
     #   lambda { |key, options| options[:gender] == 'm' ? "Mr. #{options[:name]}" : "Mrs. #{options[:name]}" }
     #
-    # Then <tt>I18n.t(:salutation, :gender => 'w', :name => 'Smith') will result in "Mrs. Smith".
+    # Then <tt>I18n.t(:salutation, :gender => 'w', :name => 'Smith')</tt> will result in "Mrs. Smith".
     #
     # Note that the string returned by lambda will go through string interpolation too,
     # so the following lambda would give the same result:
@@ -192,7 +193,7 @@ module I18n
     # always return the same translations/values per unique combination of argument
     # values.
     #
-    # *Ruby 2.7+ keyword arguments warning*
+    # <b>Ruby 2.7+ keyword arguments warning</b>
     #
     # This method uses keyword arguments.
     # There is a breaking change in ruby that produces warning with ruby 2.7 and won't work as expected with ruby 3.0
@@ -264,7 +265,8 @@ module I18n
     def exists?(key, _locale = nil, locale: _locale, **options)
       locale ||= config.locale
       raise Disabled.new('exists?') if locale == false
-      raise I18n::ArgumentError if key.is_a?(String) && key.empty?
+      raise I18n::ArgumentError if (key.is_a?(String) && key.empty?) || key.nil?
+
       config.backend.exists?(locale, key, options)
     end
 
