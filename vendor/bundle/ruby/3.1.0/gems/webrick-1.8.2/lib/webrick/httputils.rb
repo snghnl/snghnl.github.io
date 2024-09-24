@@ -55,7 +55,6 @@ module WEBrick
       "cer"   => "application/pkix-cert",
       "crl"   => "application/pkix-crl",
       "crt"   => "application/x-x509-ca-cert",
-     #"crl"   => "application/x-pkcs7-crl",
       "css"   => "text/css",
       "dms"   => "application/octet-stream",
       "doc"   => "application/msword",
@@ -153,28 +152,49 @@ module WEBrick
     # Parses an HTTP header +raw+ into a hash of header fields with an Array
     # of values.
 
+    class SplitHeader < Array
+      def join(separator = ", ")
+        super
+      end
+    end
+
+    class CookieHeader < Array
+      def join(separator = "; ")
+        super
+      end
+    end
+
+    HEADER_CLASSES = Hash.new(SplitHeader).update({
+      "cookie" => CookieHeader,
+    })
+
     def parse_header(raw)
       header = Hash.new([].freeze)
       field = nil
       raw.each_line{|line|
         case line
-        when /^([A-Za-z0-9!\#$%&'*+\-.^_`|~]+):\s*(.*?)\s*\z/om
+        when /^([A-Za-z0-9!\#$%&'*+\-.^_`|~]+):([^\r\n\0]*?)\r\n\z/om
           field, value = $1, $2
           field.downcase!
-          header[field] = [] unless header.has_key?(field)
+          header[field] = HEADER_CLASSES[field].new unless header.has_key?(field)
           header[field] << value
-        when /^\s+(.*?)\s*\z/om
-          value = $1
+        when /^[ \t]+([^\r\n\0]*?)\r\n/om
           unless field
             raise HTTPStatus::BadRequest, "bad header '#{line}'."
           end
+          value = line
+          value.gsub!(/\A[ \t]+/, '')
+          value.slice!(-2..-1)
           header[field][-1] << " " << value
         else
           raise HTTPStatus::BadRequest, "bad header '#{line}'."
         end
       }
       header.each{|key, values|
-        values.each(&:strip!)
+        values.each{|value|
+          value.gsub!(/\A[ \t]+/, '')
+          value.gsub!(/[ \t]+\z/, '')
+        }
       }
       header
     end
@@ -184,8 +204,8 @@ module WEBrick
     # Splits a header value +str+ according to HTTP specification.
 
     def split_header_value(str)
-      str.scan(%r'\G((?:"(?:\\.|[^"])+?"|[^",]+)+)
-                    (?:,\s*|\Z)'xn).flatten
+      str.scan(%r'\G((?:"(?:\\.|[^"])+?"|[^",]++)+)
+                    (?:,[ \t]*|\Z)'xn).flatten
     end
     module_function :split_header_value
 
@@ -213,9 +233,9 @@ module WEBrick
     def parse_qvalues(value)
       tmp = []
       if value
-        parts = value.split(/,\s*/)
+        parts = value.split(/,[ \t]*/)
         parts.each {|part|
-          if m = %r{^([^\s,]+?)(?:;\s*q=(\d+(?:\.\d+)?))?$}.match(part)
+          if m = %r{^([^ \t,]+?)(?:;[ \t]*q=(\d+(?:\.\d+)?))?$}.match(part)
             val = m[1]
             q = (m[2] or 1).to_f
             tmp.push([val, q])
@@ -314,8 +334,8 @@ module WEBrick
         elsif str == CRLF
           @header = HTTPUtils::parse_header(@raw_header.join)
           if cd = self['content-disposition']
-            if /\s+name="(.*?)"/ =~ cd then @name = $1 end
-            if /\s+filename="(.*?)"/ =~ cd then @filename = $1 end
+            if /[ \t]+name="(.*?)"/ =~ cd then @name = $1 end
+            if /[ \t]+filename="(.*?)"/ =~ cd then @filename = $1 end
           end
         else
           @raw_header << str

@@ -318,7 +318,7 @@ module WEBrick
     def [](header_name)
       if @header
         value = @header[header_name.downcase]
-        value.empty? ? nil : value.join(", ")
+        value.empty? ? nil : value.join
       end
     end
 
@@ -329,7 +329,7 @@ module WEBrick
       if @header
         @header.each{|k, v|
           value = @header[k]
-          yield(k, value.empty? ? nil : value.join(", "))
+          yield(k, value.empty? ? nil : value.join)
         }
       end
     end
@@ -402,7 +402,7 @@ module WEBrick
     # This method provides the metavariables defined by the revision 3
     # of "The WWW Common Gateway Interface Version 1.1"
     # To browse the current document of CGI Version 1.1, see below:
-    # http://tools.ietf.org/html/rfc3875
+    # https://www.rfc-editor.org/rfc/rfc3875
 
     def meta_vars
       meta = Hash.new
@@ -458,7 +458,7 @@ module WEBrick
       end
 
       @request_time = Time.now
-      if /^(\S+)\s+(\S++)(?:\s+HTTP\/(\d+\.\d+))?\r?\n/mo =~ @request_line
+      if /^(\S+) (\S++)(?: HTTP\/(\d+\.\d+))?\r\n/mo =~ @request_line
         @request_method = $1
         @unparsed_uri   = $2
         @http_version   = HTTPVersion.new($3 ? $3 : "0.9")
@@ -470,15 +470,34 @@ module WEBrick
 
     def read_header(socket)
       if socket
+        end_of_headers = false
+
         while line = read_line(socket)
-          break if /\A(#{CRLF}|#{LF})\z/om =~ line
+          if line == CRLF
+            end_of_headers = true
+            break
+          end
           if (@request_bytes += line.bytesize) > MAX_HEADER_LENGTH
             raise HTTPStatus::RequestEntityTooLarge, 'headers too large'
           end
+          if line.include?("\x00")
+            raise HTTPStatus::BadRequest, 'null byte in header'
+          end
           @raw_header << line
         end
+
+        # Allow if @header already set to support chunked trailers
+        raise HTTPStatus::EOFError unless end_of_headers || @header
       end
       @header = HTTPUtils::parse_header(@raw_header.join)
+
+      if (content_length = @header['content-length']) && content_length.length != 0
+        if content_length.length > 1
+          raise HTTPStatus::BadRequest, "multiple content-length request headers"
+        elsif !/\A\d+\z/.match?(content_length[0])
+          raise HTTPStatus::BadRequest, "invalid content-length request header"
+        end
+      end
     end
 
     def parse_uri(str, scheme="http")
@@ -503,14 +522,19 @@ module WEBrick
       return URI::parse(uri.to_s)
     end
 
+    host_pattern = URI::RFC2396_Parser.new.pattern.fetch(:HOST)
+    HOST_PATTERN = /\A(#{host_pattern})(?::(\d+))?\z/n
     def parse_host_request_line(host)
-      pattern = /\A(#{URI::REGEXP::PATTERN::HOST})(?::(\d+))?\z/no
-      host.scan(pattern)[0]
+      host.scan(HOST_PATTERN)[0]
     end
 
     def read_body(socket, block)
       return unless socket
       if tc = self['transfer-encoding']
+        if self['content-length']
+          raise HTTPStatus::BadRequest, "request with both transfer-encoding and content-length, possible request smuggling"
+        end
+
         case tc
         when /\Achunked\z/io then read_chunked(socket, block)
         else raise HTTPStatus::NotImplemented, "Transfer-Encoding: #{tc}."
@@ -534,7 +558,7 @@ module WEBrick
 
     def read_chunk_size(socket)
       line = read_line(socket)
-      if /^([0-9a-fA-F]+)(?:;(\S+))?/ =~ line
+      if /\A([0-9a-fA-F]+)(?:;(\S+(?:=\S+)?))?\r\n\z/ =~ line
         chunk_size = $1.hex
         chunk_ext = $2
         [ chunk_size, chunk_ext ]
@@ -555,7 +579,11 @@ module WEBrick
           block.call(data)
         end while (chunk_size -= sz) > 0
 
-        read_line(socket)                    # skip CRLF
+        line = read_line(socket)              # skip CRLF
+        unless line == "\r\n"
+          raise HTTPStatus::BadRequest, "extra data after chunk `#{line}'."
+        end
+
         chunk_size, = read_chunk_size(socket)
       end
       read_header(socket)                    # trailer + CRLF
