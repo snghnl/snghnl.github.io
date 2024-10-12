@@ -11,25 +11,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@master
+      # Step 1: Checkout the repository
+      - uses: actions/checkout@v3
 
-      - uses: ruby/setup-ruby@8575951200e472d5f2d95c625da0c7bec8217c42 # v1.161.0
+      # Step 2: Install dependencies for ruby-build
+      - name: Install dependencies for ruby-build
+        run: sudo apt-get install -y build-essential libssl-dev zlib1g-dev libreadline-dev
+
+      # Step 3: Clone ruby-build and install Ruby 3.1.4 manually
+      - name: Clone ruby-build
+        run: git clone https://github.com/rbenv/ruby-build.git /tmp/ruby-build
+
+      - name: Install Ruby 3.1.4
+        run: /tmp/ruby-build/bin/ruby-build 3.1.4 /opt/hostedtoolcache/Ruby/3.1.4/x64
+
+      # Step 4: Mark the Ruby installation as complete
+      - name: Mark Ruby installation as complete
+        run: touch /opt/hostedtoolcache/Ruby/3.1.4/x64.complete
+
+      # Step 5: Set up Ruby (using the manually installed version)
+      - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.1' # Not needed with a .ruby-version file
-          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-          cache-version: 0 # Increment this number if you need to re-download cached gems
+          ruby-version: '3.1.4' # Use the manually installed Ruby version
+          bundler-cache: true    # Caches installed gems automatically
+          cache-version: 0       # Increment this number to refresh the cache
 
+      # Step 6: Set up Node.js
       - uses: actions/setup-node@v2
         with:
           node-version: "17"
 
+      # Step 7: Install Node.js dependencies
       - run: npm install
 
+      # Step 8: Run the Notion Importer script
       - run: node assets/js/notionImporter.js
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           DATABASE_ID: ${{ secrets.DATABASE_ID }}
 
+      # Step 9: Auto-commit changes to GitHub
       - uses: stefanzweifel/git-auto-commit-action@v4
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN_FOR_GITHUB }}
