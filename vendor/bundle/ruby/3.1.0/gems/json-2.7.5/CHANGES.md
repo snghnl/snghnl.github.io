@@ -1,5 +1,11 @@
 # Changes
 
+### 2024-10-25 (2.7.5)
+
+* Fix a memory leak when `#to_json` methods raise an exception.
+* Gracefully handle formatting configs being set to `nil` instead of `""`.
+* Workaround another issue caused by conflicting versions of both `json_pure` and `json` being loaded.
+
 ### 2024-10-25 (2.7.4)
 
 * Workaround a bug in 3.4.8 and older https://github.com/rubygems/rubygems/pull/6490.
