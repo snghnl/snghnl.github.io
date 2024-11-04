@@ -668,7 +668,11 @@ json_object_i(VALUE key, VALUE val, VALUE _arg)
     VALUE key_to_s;
     switch(rb_type(key)) {
         case T_STRING:
-            key_to_s = key;
+            if (RB_LIKELY(RBASIC_CLASS(key) == rb_cString)) {
+                key_to_s = key;
+            } else {
+                key_to_s = rb_funcall(key, i_to_s, 0);
+            }
             break;
         case T_SYMBOL:
             key_to_s = rb_sym2str(key);
@@ -678,7 +682,11 @@ json_object_i(VALUE key, VALUE val, VALUE _arg)
             break;
     }
 
-    generate_json_string(buffer, Vstate, state, key_to_s);
+    if (RB_LIKELY(RBASIC_CLASS(key_to_s) == rb_cString)) {
+        generate_json_string(buffer, Vstate, state, key_to_s);
+    } else {
+        generate_json(buffer, Vstate, state, key_to_s);
+    }
     if (RB_UNLIKELY(state->space_before)) fbuffer_append(buffer, state->space_before, state->space_before_len);
     fbuffer_append_char(buffer, ':');
     if (RB_UNLIKELY(state->space)) fbuffer_append(buffer, state->space, state->space_len);
