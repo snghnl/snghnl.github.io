@@ -234,7 +234,7 @@ module Dnsruby
       def verify_common(response)#:nodoc: all
         tsig_rr = response.tsig
 
-	      if (!tsig_rr)
+	if (!tsig_rr)
           response.tsigerror = RCode.FORMERR
           response.tsigstate = :Failed
           return false

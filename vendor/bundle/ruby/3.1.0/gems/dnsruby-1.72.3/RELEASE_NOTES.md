@@ -1,5 +1,10 @@
 # Release Notes
 
+## v1.72.3
+
+* Fix cached answer response time - thanks Andre Meij!
+* Add base64 as a dependency for Ruby 3.4.0+ support - thanks Alexandre ZANNI!
+
 ## v1.72.2
 
 * Invalid CAA handling fixes - thanks Noah Smethwick and Ryan Doherty!

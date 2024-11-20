@@ -27,7 +27,6 @@ def create_task(task_name, test_suite_filespec)
 end
 
 create_task(:test,         'test/ts_dnsruby.rb')
-create_task(:dnskey,         'test/tc_dnskey.rb')
 create_task(:test_offline, 'test/ts_offline.rb')
 create_task(:test_online,  'test/ts_online.rb')
 create_task(:soak,         'test/tc_soak.rb')

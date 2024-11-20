@@ -138,6 +138,10 @@ module Dnsruby
         @@sockets << query_settings.socket
         @@socket_is_persistent[query_settings.socket] = query_settings.is_persistent_socket
       }
+      wake_up_select_thread
+    end
+
+    def wake_up_select_thread
       begin
         @@wakeup_sockets[0].send("wakeup!", 0)
       rescue Exception
@@ -641,6 +645,7 @@ module Dnsruby
           do_select
         }
       end
+      wake_up_select_thread
     end
 
     def push_response_to_select(client_id, client_queue, msg, query, res)
@@ -661,6 +666,7 @@ module Dnsruby
           do_select
         }
       end
+      wake_up_select_thread
     end
 
     def push_validation_response_to_select(client_id, client_queue, msg, err, query, res)
@@ -677,6 +683,7 @@ module Dnsruby
           do_select
         }
       end
+      wake_up_select_thread
     end
 
     def send_queued_exceptions

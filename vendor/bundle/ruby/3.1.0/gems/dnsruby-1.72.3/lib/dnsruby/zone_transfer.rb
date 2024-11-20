@@ -138,7 +138,7 @@ module Dnsruby
                 send_message(socket, msg)
                 next
               end
-              raise ResolvError.new(rcode.string)
+              raise ResolvError.new(rcode.string);
             end
 
             if (response.question[0].qtype != @transfer_type)
