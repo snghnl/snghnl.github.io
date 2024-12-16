@@ -1,14 +1,14 @@
 # -*- encoding: utf-8 -*-
-# stub: csv 3.3.0 ruby lib
+# stub: csv 3.3.1 ruby lib
 
 Gem::Specification.new do |s|
   s.name = "csv".freeze
-  s.version = "3.3.0"
+  s.version = "3.3.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0".freeze) if s.respond_to? :required_rubygems_version=
   s.require_paths = ["lib".freeze]
   s.authors = ["James Edward Gray II".freeze, "Kouhei Sutou".freeze]
-  s.date = "2024-03-22"
+  s.date = "2024-12-15"
   s.description = "The CSV library provides a complete interface to CSV files and data. It offers tools to enable you to read and write to and from Strings or IO objects, as needed.".freeze
   s.email = [nil, "kou@cozmixng.org".freeze]
   s.extra_rdoc_files = ["LICENSE.txt".freeze, "NEWS.md".freeze, "README.md".freeze, "doc/csv/recipes/filtering.rdoc".freeze, "doc/csv/recipes/generating.rdoc".freeze, "doc/csv/recipes/parsing.rdoc".freeze, "doc/csv/recipes/recipes.rdoc".freeze]
@@ -21,20 +21,4 @@ Gem::Specification.new do |s|
   s.summary = "CSV Reading and Writing".freeze
 
   s.installed_by_version = "3.3.26" if s.respond_to? :installed_by_version
-
-  if s.respond_to? :specification_version then
-    s.specification_version = 4
-  end
-
-  if s.respond_to? :add_runtime_dependency then
-    s.add_development_dependency(%q<bundler>.freeze, [">= 0"])
-    s.add_development_dependency(%q<rake>.freeze, [">= 0"])
-    s.add_development_dependency(%q<benchmark_driver>.freeze, [">= 0"])
-    s.add_development_dependency(%q<test-unit>.freeze, [">= 3.4.8"])
-  else
-    s.add_dependency(%q<bundler>.freeze, [">= 0"])
-    s.add_dependency(%q<rake>.freeze, [">= 0"])
-    s.add_dependency(%q<benchmark_driver>.freeze, [">= 0"])
-    s.add_dependency(%q<test-unit>.freeze, [">= 3.4.8"])
-  end
 end

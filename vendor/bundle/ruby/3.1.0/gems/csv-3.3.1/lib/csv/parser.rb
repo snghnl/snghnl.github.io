@@ -409,13 +409,7 @@ class CSV
 
       begin
         @scanner ||= build_scanner
-        if quote_character.nil?
-          parse_no_quote(&block)
-        elsif @need_robust_parsing
-          parse_quotable_robust(&block)
-        else
-          parse_quotable_loose(&block)
-        end
+        __send__(@parse_method, &block)
       rescue InvalidEncoding
         if @scanner
           ignore_broken_line
@@ -459,7 +453,6 @@ class CSV
     end
 
     def prepare_variable
-      @need_robust_parsing = false
       @encoding = @options[:encoding]
       liberal_parsing = @options[:liberal_parsing]
       if liberal_parsing
@@ -472,7 +465,6 @@ class CSV
           @double_quote_outside_quote = false
           @backslash_quote = false
         end
-        @need_robust_parsing = true
       else
         @liberal_parsing = false
         @backslash_quote = false
@@ -554,7 +546,6 @@ class CSV
           @rstrip_value = Regexp.new(@escaped_strip +
                                      "+\\z".encode(@encoding))
         end
-        @need_robust_parsing = true
       elsif @strip
         strip_values = " \t\f\v"
         @escaped_strip = strip_values.encode(@encoding)
@@ -562,7 +553,6 @@ class CSV
           @strip_value = Regexp.new("[#{strip_values}]+".encode(@encoding))
           @rstrip_value = Regexp.new("[#{strip_values}]+\\z".encode(@encoding))
         end
-        @need_robust_parsing = true
       end
     end
 
@@ -767,7 +757,7 @@ class CSV
       case headers
       when Array
         @raw_headers = headers
-        quoted_fields = [false] * @raw_headers.size
+        quoted_fields = FieldsConverter::NO_QUOTED_FIELDS
         @use_headers = true
       when String
         @raw_headers, quoted_fields = parse_headers(headers)
@@ -808,6 +798,13 @@ class CSV
 
     def prepare_parser
       @may_quoted = may_quoted?
+      if @quote_character.nil?
+        @parse_method = :parse_no_quote
+      elsif @liberal_parsing or @strip
+        @parse_method = :parse_quotable_robust
+      else
+        @parse_method = :parse_quotable_loose
+      end
     end
 
     def may_quoted?
@@ -944,11 +941,9 @@ class CSV
         if line.empty?
           next if @skip_blanks
           row = []
-          quoted_fields = []
         else
           line = strip_value(line)
           row = line.split(@split_column_separator, -1)
-          quoted_fields = [false] * row.size
           if @max_field_size
             row.each do |column|
               validate_field_size(column)
@@ -962,7 +957,7 @@ class CSV
           end
         end
         @last_line = original_line
-        emit_row(row, quoted_fields, &block)
+        emit_row(row, &block)
       end
     end
 
@@ -984,10 +979,10 @@ class CSV
             next
           end
           row = []
-          quoted_fields = []
+          quoted_fields = FieldsConverter::NO_QUOTED_FIELDS
         elsif line.include?(@cr) or line.include?(@lf)
           @scanner.keep_back
-          @need_robust_parsing = true
+          @parse_method = :parse_quotable_robust
           return parse_quotable_robust(&block)
         else
           row = line.split(@split_column_separator, -1)
@@ -1011,7 +1006,7 @@ class CSV
                 row[i] = column[1..-2]
               else
                 @scanner.keep_back
-                @need_robust_parsing = true
+                @parse_method = :parse_quotable_robust
                 return parse_quotable_robust(&block)
               end
               validate_field_size(row[i])
@@ -1046,13 +1041,13 @@ class CSV
           quoted_fields << @quoted_column_value
         elsif parse_row_end
           if row.empty? and value.nil?
-            emit_row([], [], &block) unless @skip_blanks
+            emit_row(row, &block) unless @skip_blanks
           else
             row << value
             quoted_fields << @quoted_column_value
             emit_row(row, quoted_fields, &block)
             row = []
-            quoted_fields = []
+            quoted_fields.clear
           end
           skip_needless_lines
           start_row
@@ -1257,7 +1252,7 @@ class CSV
       @scanner.keep_start
     end
 
-    def emit_row(row, quoted_fields, &block)
+    def emit_row(row, quoted_fields=FieldsConverter::NO_QUOTED_FIELDS, &block)
       @lineno += 1
 
       raw_row = row

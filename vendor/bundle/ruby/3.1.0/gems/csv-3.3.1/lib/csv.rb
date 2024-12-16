@@ -91,6 +91,7 @@
 
 require "forwardable"
 require "date"
+require "time"
 require "stringio"
 
 require_relative "csv/fields_converter"
@@ -521,6 +522,7 @@ require_relative "csv/writer"
 # - <tt>:float</tt>: converts each \String-embedded float into a true \Float.
 # - <tt>:date</tt>: converts each \String-embedded date into a true \Date.
 # - <tt>:date_time</tt>: converts each \String-embedded date-time into a true \DateTime
+# - <tt>:time</tt>: converts each \String-embedded time into a true \Time
 # .
 # This example creates a converter proc, then stores it:
 #   strip_converter = proc {|field| field.strip }
@@ -631,6 +633,7 @@ require_relative "csv/writer"
 #   [:numeric, [:integer, :float]]
 #   [:date, Proc]
 #   [:date_time, Proc]
+#   [:time, Proc]
 #   [:all, [:date_time, :numeric]]
 #
 # Each of these converters transcodes values to UTF-8 before attempting conversion.
@@ -674,6 +677,15 @@ require_relative "csv/writer"
 #   # With the converter
 #   csv = CSV.parse_line(data, converters: :date_time)
 #   csv # => [#<DateTime: 2020-05-07T14:59:00-05:00 ((2458977j,71940s,0n),-18000s,2299161j)>, "x"]
+#
+# Converter +time+ converts each field that Time::parse accepts:
+#   data = '2020-05-07T14:59:00-05:00,x'
+#   # Without the converter
+#   csv = CSV.parse_line(data)
+#   csv # => ["2020-05-07T14:59:00-05:00", "x"]
+#   # With the converter
+#   csv = CSV.parse_line(data, converters: :time)
+#   csv # => [2020-05-07 14:59:00 -0500, "x"]
 #
 # Converter +:numeric+ converts with both +:date_time+ and +:numeric+..
 #
@@ -871,10 +883,10 @@ class CSV
   # A Regexp used to find and convert some common Date formats.
   DateMatcher     = / \A(?: (\w+,?\s+)?\w+\s+\d{1,2},?\s+\d{2,4} |
                             \d{4}-\d{2}-\d{2} )\z /x
-  # A Regexp used to find and convert some common DateTime formats.
+  # A Regexp used to find and convert some common (Date)Time formats.
   DateTimeMatcher =
     / \A(?: (\w+,?\s+)?\w+\s+\d{1,2}\s+\d{1,2}:\d{1,2}:\d{1,2},?\s+\d{2,4} |
-            # ISO-8601 and RFC-3339 (space instead of T) recognized by DateTime.parse
+            # ISO-8601 and RFC-3339 (space instead of T) recognized by (Date)Time.parse
             \d{4}-\d{2}-\d{2}
               (?:[T\s]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?(?:[+-]\d{2}(?::\d{2})|Z)?)?)?
         )\z /x
@@ -909,6 +921,14 @@ class CSV
         e = f.encode(ConverterEncoding)
         e.match?(DateTimeMatcher) ? DateTime.parse(e) : f
       rescue  # encoding conversion or date parse errors
+        f
+      end
+    },
+    time: lambda { |f|
+      begin
+        e = f.encode(ConverterEncoding)
+        e.match?(DateTimeMatcher) ? Time.parse(e) : f
+      rescue  # encoding conversion or parse errors
         f
       end
     },
@@ -1198,7 +1218,44 @@ class CSV
     # * Argument +in_string_or_io+ must be a \String or an \IO stream.
     # * Argument +out_string_or_io+ must be a \String or an \IO stream.
     # * Arguments <tt>**options</tt> must be keyword options.
-    #   See {Options for Parsing}[#class-CSV-label-Options+for+Parsing].
+    #
+    #   - Each option defined as an {option for parsing}[#class-CSV-label-Options+for+Parsing]
+    #     is used for parsing the filter input.
+    #   - Each option defined as an {option for generating}[#class-CSV-label-Options+for+Generating]
+    #     is used for generator the filter input.
+    #
+    # However, there are three options that may be used for both parsing and generating:
+    # +col_sep+, +quote_char+, and +row_sep+.
+    #
+    # Therefore for method +filter+ (and method +filter+ only),
+    # there are special options that allow these parsing and generating options
+    # to be specified separately:
+    #
+    # - Options +input_col_sep+ and +output_col_sep+
+    #   (and their aliases +in_col_sep+ and +out_col_sep+)
+    #   specify the column separators for parsing and generating.
+    # - Options +input_quote_char+ and +output_quote_char+
+    #   (and their aliases +in_quote_char+ and +out_quote_char+)
+    #   specify the quote characters for parsing and generting.
+    # - Options +input_row_sep+ and +output_row_sep+
+    #   (and their aliases +in_row_sep+ and +out_row_sep+)
+    #   specify the row separators for parsing and generating.
+    #
+    # Example options (for column separators):
+    #
+    #   CSV.filter                                    # Default for both parsing and generating.
+    #   CSV.filter(in_col_sep: ';')                   # ';' for parsing, default for generating.
+    #   CSV.filter(out_col_sep: '|')                  # Default for parsing, '|' for generating.
+    #   CSV.filter(in_col_sep: ';', out_col_sep: '|') # ';' for parsing, '|' for generating.
+    #
+    # Note that for a special option (e.g., +input_col_sep+)
+    # and its corresponding "regular" option (e.g., +col_sep+),
+    # the two are mutually overriding.
+    #
+    # Another example (possibly surprising):
+    #
+    #   CSV.filter(in_col_sep: ';', col_sep: '|') # '|' for both parsing(!) and generating.
+    #
     def filter(input=nil, output=nil, **options)
       # parse options for input, output, or both
       in_options, out_options = Hash.new, {row_sep: InputRecordSeparator.value}
@@ -1508,10 +1565,8 @@ class CSV
 
     #
     # :call-seq:
-    #   open(file_path, mode = "rb", **options ) -> new_csv
-    #   open(io, mode = "rb", **options ) -> new_csv
-    #   open(file_path, mode = "rb", **options ) { |csv| ... } -> object
-    #   open(io, mode = "rb", **options ) { |csv| ... } -> object
+    #   open(path_or_io, mode = "rb", **options ) -> new_csv
+    #   open(path_or_io, mode = "rb", **options ) { |csv| ... } -> object
     #
     # possible options elements:
     #   keyword form:
@@ -1520,7 +1575,7 @@ class CSV
     #     :undef => :replace   # replace undefined conversion
     #     :replace => string   # replacement string ("?" or "\uFFFD" if not specified)
     #
-    # * Argument +path+, if given, must be the path to a file.
+    # * Argument +path_or_io+, must be a file path or an \IO stream.
     # :include: ../doc/csv/arguments/io.rdoc
     # * Argument +mode+, if given, must be a \File mode.
     #   See {Access Modes}[https://docs.ruby-lang.org/en/master/File.html#class-File-label-Access+Modes].
@@ -1544,6 +1599,9 @@ class CSV
     #   path = 't.csv'
     #   File.write(path, string)
     #
+    #   string_io = StringIO.new
+    #   string_io << "foo,0\nbar,1\nbaz,2\n"
+    #
     # ---
     #
     # With no block given, returns a new \CSV object.
@@ -1556,6 +1614,9 @@ class CSV
     #   csv = CSV.open(File.open(path))
     #   csv # => #<CSV io_type:File io_path:"t.csv" encoding:UTF-8 lineno:0 col_sep:"," row_sep:"\n" quote_char:"\"">
     #
+    # Create a \CSV object using a \StringIO:
+    #   csv = CSV.open(string_io)
+    #   csv # => #<CSV io_type:StringIO encoding:UTF-8 lineno:0 col_sep:"," row_sep:"\n" quote_char:"\"">
     # ---
     #
     # With a block given, calls the block with the created \CSV object;
@@ -1573,15 +1634,25 @@ class CSV
     # Output:
     #   #<CSV io_type:File io_path:"t.csv" encoding:UTF-8 lineno:0 col_sep:"," row_sep:"\n" quote_char:"\"">
     #
+    # Using a \StringIO:
+    #   csv = CSV.open(string_io) {|csv| p csv}
+    #   csv # => #<CSV io_type:StringIO encoding:UTF-8 lineno:0 col_sep:"," row_sep:"\n" quote_char:"\"">
+    # Output:
+    #   #<CSV io_type:StringIO encoding:UTF-8 lineno:0 col_sep:"," row_sep:"\n" quote_char:"\"">
     # ---
     #
     # Raises an exception if the argument is not a \String object or \IO object:
     #   # Raises TypeError (no implicit conversion of Symbol into String)
     #   CSV.open(:foo)
-    def open(filename, mode="r", **options)
+    def open(filename_or_io, mode="r", **options)
       # wrap a File opened with the remaining +args+ with no newline
       # decorator
-      file_opts = options.dup
+      file_opts = {}
+      may_enable_bom_detection_automatically(filename_or_io,
+                                             mode,
+                                             options,
+                                             file_opts)
+      file_opts.merge!(options)
       unless file_opts.key?(:newline)
         file_opts[:universal_newline] ||= false
       end
@@ -1590,14 +1661,19 @@ class CSV
       options.delete(:replace)
       options.delete_if {|k, _| /newline\z/.match?(k)}
 
-      begin
-        f = File.open(filename, mode, **file_opts)
-      rescue ArgumentError => e
-        raise unless /needs binmode/.match?(e.message) and mode == "r"
-        mode = "rb"
-        file_opts = {encoding: Encoding.default_external}.merge(file_opts)
-        retry
+      if filename_or_io.is_a?(StringIO)
+        f = create_stringio(filename_or_io.string, mode, **file_opts)
+      else
+        begin
+          f = File.open(filename_or_io, mode, **file_opts)
+        rescue ArgumentError => e
+          raise unless /needs binmode/.match?(e.message) and mode == "r"
+          mode = "rb"
+          file_opts = {encoding: Encoding.default_external}.merge(file_opts)
+          retry
+        end
       end
+
       begin
         csv = new(f, **options)
       rescue Exception
@@ -1729,6 +1805,23 @@ class CSV
     # Raises an exception if the argument is not a \String object or \IO object:
     #   # Raises NoMethodError (undefined method `close' for :foo:Symbol)
     #   CSV.parse(:foo)
+    #
+    # ---
+    #
+    # Please make sure if your text contains \BOM or not. CSV.parse will not remove
+    # \BOM automatically. You might want to remove \BOM before calling CSV.parse :
+    #   # remove BOM on calling File.open
+    #   File.open(path, encoding: 'bom|utf-8') do |file|
+    #     CSV.parse(file, headers: true) do |row|
+    #       # you can get value by column name because BOM is removed
+    #       p row['Name']
+    #     end
+    #   end
+    #
+    # Output:
+    #   # "foo"
+    #   # "bar"
+    #   # "baz"
     def parse(str, **options, &block)
       csv = new(str, **options)
 
@@ -1861,6 +1954,42 @@ class CSV
       }
       options = default_options.merge(options)
       read(path, **options)
+    end
+
+    ON_WINDOWS = /mingw|mswin/.match?(RUBY_PLATFORM)
+    private_constant :ON_WINDOWS
+
+    private
+    def may_enable_bom_detection_automatically(filename_or_io,
+                                               mode,
+                                               options,
+                                               file_opts)
+      if filename_or_io.is_a?(StringIO)
+        # Support to StringIO was dropped for Ruby 2.6 and earlier without BOM support:
+        # https://github.com/ruby/stringio/pull/47
+        return if RUBY_VERSION < "2.7"
+      else
+        # "bom|utf-8" may be buggy on Windows:
+        # https://bugs.ruby-lang.org/issues/20526
+        return if ON_WINDOWS
+      end
+      return unless Encoding.default_external == Encoding::UTF_8
+      return if options.key?(:encoding)
+      return if options.key?(:external_encoding)
+      return if mode.include?(":")
+      file_opts[:encoding] = "bom|utf-8"
+    end
+
+    if RUBY_VERSION < "2.7"
+      def create_stringio(str, mode, opts)
+        opts.delete_if {|k, _| k == :universal_newline or DEFAULT_OPTIONS.key?(k)}
+        raise ArgumentError, "Unsupported options parsing StringIO: #{opts.keys}" unless opts.empty?
+        StringIO.new(str, mode)
+      end
+    else
+      def create_stringio(str, mode, opts)
+        StringIO.new(str, mode, **opts)
+      end
     end
   end
 
@@ -1998,6 +2127,12 @@ class CSV
 
     @writer = nil
     writer if @writer_options[:write_headers]
+  end
+
+  class TSV < CSV
+    def initialize(data, **options)
+      super(data, **({col_sep: "\t"}.merge(options)))
+    end
   end
 
   # :call-seq:

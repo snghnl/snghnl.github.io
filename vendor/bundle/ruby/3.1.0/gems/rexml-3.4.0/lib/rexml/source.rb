@@ -1,6 +1,7 @@
 # coding: US-ASCII
 # frozen_string_literal: false
 
+require "stringio"
 require "strscan"
 
 require_relative 'encoding'
@@ -15,6 +16,16 @@ module REXML
         end
 
         def scan(pattern)
+          pattern = /#{Regexp.escape(pattern)}/ if pattern.is_a?(String)
+          super(pattern)
+        end
+
+        def match?(pattern)
+          pattern = /#{Regexp.escape(pattern)}/ if pattern.is_a?(String)
+          super(pattern)
+        end
+
+        def skip(pattern)
           pattern = /#{Regexp.escape(pattern)}/ if pattern.is_a?(String)
           super(pattern)
         end
@@ -35,7 +46,6 @@ module REXML
           arg.respond_to? :eof?
         IOSource.new(arg)
       elsif arg.respond_to? :to_str
-        require 'stringio'
         IOSource.new(StringIO.new(arg))
       elsif arg.kind_of? Source
         arg
@@ -77,7 +87,7 @@ module REXML
         detect_encoding
       end
       @line = 0
-      @term_encord = {}
+      @encoded_terms = {}
     end
 
     # The current buffer (what we're going to read next)
@@ -123,6 +133,14 @@ module REXML
         @scanner.scan(pattern).nil? ? nil : @scanner
       else
         @scanner.check(pattern).nil? ? nil : @scanner
+      end
+    end
+
+    def match?(pattern, cons=false)
+      if cons
+        !@scanner.skip(pattern).nil?
+      else
+        !@scanner.match?(pattern).nil?
       end
     end
 
@@ -228,7 +246,7 @@ module REXML
 
     def read_until(term)
       pattern = Private::PRE_DEFINED_TERM_PATTERNS[term] || /#{Regexp.escape(term)}/
-      term = @term_encord[term] ||= encode(term)
+      term = @encoded_terms[term] ||= encode(term)
       until str = @scanner.scan_until(pattern)
         break if @source.nil?
         break if @source.eof?
@@ -267,6 +285,23 @@ module REXML
       md.nil? ? nil : @scanner
     end
 
+    def match?( pattern, cons=false )
+      # To avoid performance issue, we need to increase bytes to read per scan
+      min_bytes = 1
+      while true
+        if cons
+          n_matched_bytes = @scanner.skip(pattern)
+        else
+          n_matched_bytes = @scanner.match?(pattern)
+        end
+        return true if n_matched_bytes
+        return false if pattern.is_a?(String)
+        return false if @source.nil?
+        return false unless read(nil, min_bytes)
+        min_bytes *= 2
+      end
+    end
+
     def empty?
       super and ( @source.nil? || @source.eof? )
     end
@@ -286,7 +321,7 @@ module REXML
         rescue
         end
         @er_source.seek(pos)
-      rescue IOError
+      rescue IOError, SystemCallError
         pos = -1
         line = -1
       end
