@@ -88,10 +88,10 @@ CCDLFLAGS = -fPIC
 CFLAGS   = $(CCDLFLAGS) $(cflags)  -fPIC -std=c99 $(ARCH_FLAG)
 INCFLAGS = -I. -I$(arch_hdrdir) -I$(hdrdir)/ruby/backward -I$(hdrdir) -I$(srcdir)
 DEFS     = 
-CPPFLAGS = -DJSON_GENERATOR -I/opt/hostedtoolcache/Ruby/3.1.4/x64/include -DENABLE_PATH_CHECK=0 $(DEFS) $(cppflags)
+CPPFLAGS = -DHAVE_RB_ENC_INTERNED_STR -DHAVE_RB_HASH_BULK_INSERT -DHAVE_RB_CATEGORY_WARN -DHAVE_STRNLEN -DENABLE_PATH_CHECK=0 $(DEFS) $(cppflags)
 CXXFLAGS = $(CCDLFLAGS)  $(ARCH_FLAG)
-ldflags  = -L. -L/opt/hostedtoolcache/Ruby/3.1.4/x64/lib  -fstack-protector-strong -rdynamic -Wl,-export-dynamic -Wl,--no-as-needed
-dldflags = -L/opt/hostedtoolcache/Ruby/3.1.4/x64/lib  -Wl,--compress-debug-sections=zlib 
+ldflags  = -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic -Wl,--no-as-needed
+dldflags = -Wl,--compress-debug-sections=zlib 
 ARCH_FLAG = 
 DLDFLAGS = $(ldflags) $(dldflags) $(ARCH_FLAG)
 LDSHARED = $(CC) -shared
@@ -140,13 +140,13 @@ extout_prefix =
 target_prefix = /json/ext
 LOCAL_LIBS = 
 LIBS = $(LIBRUBYARG_SHARED)  -lm  -lc
-ORIG_SRCS = generator.c
+ORIG_SRCS = parser.c
 SRCS = $(ORIG_SRCS) 
-OBJS = generator.o
+OBJS = parser.o
 HDRS = 
 LOCAL_HDRS = 
-TARGET = generator
-TARGET_NAME = generator
+TARGET = parser
+TARGET_NAME = parser
 TARGET_ENTRY = Init_$(TARGET_NAME)
 DLLIB = $(TARGET).so
 EXTSTATIC = 
