@@ -49,11 +49,17 @@ module Zip
     #
     # @param context [String||IO||StringIO] file path or IO/StringIO object
     # @param offset [Integer] offset in the IO/StringIO
-    def initialize(context, offset = 0, decrypter = nil)
+    def initialize(context, dep_offset = 0, dep_decrypter = nil, offset: 0, decrypter: nil)
       super()
+
+      if !dep_offset.zero? || !dep_decrypter.nil?
+        Zip.warn_about_v3_api('Zip::InputStream.new')
+      end
+
+      offset         = dep_offset if offset.zero?
       @archive_io    = get_io(context, offset)
       @decompressor  = ::Zip::NullDecompressor
-      @decrypter     = decrypter || ::Zip::NullDecrypter.new
+      @decrypter     = decrypter || dep_decrypter || ::Zip::NullDecrypter.new
       @current_entry = nil
     end
 
@@ -89,8 +95,14 @@ module Zip
       # Same as #initialize but if a block is passed the opened
       # stream is passed to the block and closed when the block
       # returns.
-      def open(filename_or_io, offset = 0, decrypter = nil)
-        zio = new(filename_or_io, offset, decrypter)
+      def open(filename_or_io, dep_offset = 0, dep_decrypter = nil, offset: 0, decrypter: nil)
+        if !dep_offset.zero? || !dep_decrypter.nil?
+          Zip.warn_about_v3_api('Zip::InputStream.new')
+        end
+
+        offset = dep_offset if offset.zero?
+
+        zio = new(filename_or_io, offset: offset, decrypter: decrypter || dep_decrypter)
         return zio unless block_given?
 
         begin
@@ -101,7 +113,8 @@ module Zip
       end
 
       def open_buffer(filename_or_io, offset = 0)
-        warn 'open_buffer is deprecated!!! Use open instead!'
+        Zip.warn_about_v3_api('Zip::InputStream.open_buffer')
+
         ::Zip::InputStream.open(filename_or_io, offset)
       end
     end

@@ -73,12 +73,17 @@ module Zip
 
     # Opens a zip archive. Pass true as the second parameter to create
     # a new archive if it doesn't exist already.
-    def initialize(path_or_io, create = false, buffer = false, options = {})
+    def initialize(path_or_io, dep_create = false, dep_buffer = false,
+                   create: false, buffer: false, **options)
       super()
+
+      Zip.warn_about_v3_api('File#new') if dep_create || dep_buffer
+
       options  = DEFAULT_OPTIONS.merge(options)
       @name    = path_or_io.respond_to?(:path) ? path_or_io.path : path_or_io
       @comment = ''
-      @create  = create ? true : false # allow any truthy value to mean true
+      @create  = create || dep_create ? true : false # allow any truthy value to mean true
+      buffer ||= dep_buffer
 
       if ::File.size?(@name.to_s)
         # There is a file, which exists, that is associated with this zip.
@@ -94,6 +99,7 @@ module Zip
         end
       elsif buffer && path_or_io.size > 0
         # This zip is probably a non-empty StringIO.
+        @create = false
         read_from_stream(path_or_io)
       elsif @create
         # This zip is completely new/empty and is to be created.
@@ -117,8 +123,10 @@ module Zip
       # Similar to ::new. If a block is passed the Zip::File object is passed
       # to the block and is automatically closed afterwards, just as with
       # ruby's builtin File::open method.
-      def open(file_name, create = false, options = {})
-        zf = ::Zip::File.new(file_name, create, false, options)
+      def open(file_name, dep_create = false, create: false, **options)
+        Zip.warn_about_v3_api('Zip::File.open') if dep_create
+
+        zf = ::Zip::File.new(file_name, create: (dep_create || create), buffer: false, **options)
         return zf unless block_given?
 
         begin
@@ -130,7 +138,9 @@ module Zip
 
       # Same as #open. But outputs data to a buffer instead of a file
       def add_buffer
-        io = ::StringIO.new('')
+        Zip.warn_about_v3_api('Zip::File.add_buffer')
+
+        io = ::StringIO.new
         zf = ::Zip::File.new(io, true, true)
         yield zf
         zf.write_buffer(io)
@@ -140,7 +150,7 @@ module Zip
       # stream, and outputs data to a buffer.
       # (This can be used to extract data from a
       # downloaded zip archive without first saving it to disk.)
-      def open_buffer(io, options = {})
+      def open_buffer(io, **options)
         unless IO_METHODS.map { |method| io.respond_to?(method) }.all? || io.kind_of?(String)
           raise "Zip::File.open_buffer expects a String or IO-like argument (responds to #{IO_METHODS.join(', ')}). Found: #{io.class}"
         end
@@ -150,7 +160,7 @@ module Zip
         # https://github.com/rubyzip/rubyzip/issues/119
         io.binmode if io.respond_to?(:binmode)
 
-        zf = ::Zip::File.new(io, true, true, options)
+        zf = ::Zip::File.new(io, create: true, buffer: true, **options)
         return zf unless block_given?
 
         yield zf
@@ -228,18 +238,24 @@ module Zip
       end
 
       # Splits an archive into parts with segment size
-      def split(zip_file_name, segment_size = MAX_SEGMENT_SIZE, delete_zip_file = true, partial_zip_file_name = nil)
+      def split(zip_file_name,
+                dep_segment_size = MAX_SEGMENT_SIZE, dep_delete_zip_file = true, dep_partial_zip_file_name = nil,
+                segment_size: MAX_SEGMENT_SIZE, delete_zip_file: nil, partial_zip_file_name: nil)
         raise Error, "File #{zip_file_name} not found" unless ::File.exist?(zip_file_name)
         raise Errno::ENOENT, zip_file_name unless ::File.readable?(zip_file_name)
 
+        if dep_segment_size != MAX_SEGMENT_SIZE || !dep_delete_zip_file || dep_partial_zip_file_name
+          Zip.warn_about_v3_api('Zip::File.split')
+        end
+
         zip_file_size = ::File.size(zip_file_name)
-        segment_size  = get_segment_size_for_split(segment_size)
+        segment_size  = get_segment_size_for_split(segment_size || dep_segment_size)
         return if zip_file_size <= segment_size
 
         segment_count = get_segment_count_for_split(zip_file_size, segment_size)
         # Checking for correct zip structure
         ::Zip::File.open(zip_file_name) {}
-        partial_zip_file_name = get_partial_zip_file_name(zip_file_name, partial_zip_file_name)
+        partial_zip_file_name = get_partial_zip_file_name(zip_file_name, (partial_zip_file_name || dep_partial_zip_file_name))
         szip_file_index       = 0
         ::File.open(zip_file_name, 'rb') do |zip_file|
           until zip_file.eof?
@@ -247,6 +263,7 @@ module Zip
             save_splited_part(zip_file, partial_zip_file_name, zip_file_size, szip_file_index, segment_size, segment_count)
           end
         end
+        delete_zip_file = delete_zip_file.nil? ? dep_delete_zip_file : delete_zip_file
         ::File.delete(zip_file_name) if delete_zip_file
         szip_file_index
       end
@@ -264,26 +281,45 @@ module Zip
     # specified. If a block is passed the stream object is passed to the block and
     # the stream is automatically closed afterwards just as with ruby's builtin
     # File.open method.
-    def get_output_stream(entry, permission_int = nil, comment = nil,
-                          extra = nil, compressed_size = nil, crc = nil,
-                          compression_method = nil, size = nil, time = nil,
+    # rubocop:disable Metrics/ParameterLists, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
+    def get_output_stream(entry,
+                          dep_permission_int = nil, dep_comment = nil,
+                          dep_extra = nil, dep_compressed_size = nil, dep_crc = nil,
+                          dep_compression_method = nil, dep_size = nil, dep_time = nil,
+                          permission_int: nil, comment: nil,
+                          extra: nil, compressed_size: nil, crc: nil,
+                          compression_method: nil, size: nil, time: nil,
                           &a_proc)
+
+      unless dep_permission_int.nil? && dep_comment.nil? && dep_extra.nil? &&
+             dep_compressed_size.nil? && dep_crc.nil? && dep_compression_method.nil? &&
+             dep_size.nil? && dep_time.nil?
+        Zip.warn_about_v3_api('Zip::File#get_output_stream')
+      end
 
       new_entry =
         if entry.kind_of?(Entry)
           entry
         else
-          Entry.new(@name, entry.to_s, comment, extra, compressed_size, crc, compression_method, size, time)
+          Entry.new(@name, entry.to_s,
+                    comment:            (comment || dep_comment),
+                    extra:              (extra || dep_extra),
+                    compressed_size:    (compressed_size || dep_compressed_size),
+                    crc:                (crc || dep_crc),
+                    compression_method: (compression_method || dep_compression_method),
+                    size:               (size || dep_size),
+                    time:               (time || dep_time))
         end
       if new_entry.directory?
         raise ArgumentError,
               "cannot open stream to directory entry - '#{new_entry}'"
       end
-      new_entry.unix_perms = permission_int
+      new_entry.unix_perms = (permission_int || dep_permission_int)
       zip_streamable_entry = StreamableStream.new(new_entry)
       @entry_set << zip_streamable_entry
       zip_streamable_entry.get_output_stream(&a_proc)
     end
+    # rubocop:enable Metrics/ParameterLists, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
 
     # Returns the name of the zip archive
     def to_s
@@ -336,9 +372,23 @@ module Zip
 
     # Extracts entry to file dest_path.
     def extract(entry, dest_path, &block)
+      Zip.warn_about_v3_api('Zip::File#extract')
+
       block ||= proc { ::Zip.on_exists_proc }
       found_entry = get_entry(entry)
       found_entry.extract(dest_path, &block)
+    end
+
+    # Extracts `entry` to a file at `entry_path`, with `destination_directory`
+    # as the base location in the filesystem.
+    #
+    # NB: The caller is responsible for making sure `destination_directory` is
+    # safe, if it is passed.
+    def extract_v3(entry, entry_path = nil, destination_directory: '.', &block)
+      block ||= proc { ::Zip.on_exists_proc }
+      found_entry = get_entry(entry)
+      entry_path ||= found_entry.name
+      found_entry.extract_v3(entry_path, destination_directory: destination_directory, &block)
     end
 
     # Commits changes that has been made since the previous commit to
@@ -361,7 +411,9 @@ module Zip
     end
 
     # Write buffer write changes to buffer and return
-    def write_buffer(io = ::StringIO.new(''))
+    def write_buffer(io = ::StringIO.new)
+      return io unless commit_required?
+
       ::Zip::OutputStream.write_buffer(io) do |zos|
         @entry_set.each { |e| e.write_to_zip_output_stream(zos) }
         zos.comment = comment

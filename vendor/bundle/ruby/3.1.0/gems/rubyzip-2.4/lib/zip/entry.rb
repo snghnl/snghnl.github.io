@@ -52,26 +52,41 @@ module Zip
       raise ::Zip::EntryNameError, "Illegal ZipEntry name '#{name}', name must not start with /"
     end
 
-    def initialize(*args)
-      name = args[1] || ''
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+    def initialize(zipfile = nil, name = nil, *args)
+      name ||= ''
       check_name(name)
 
       set_default_vars_values
       @fstype = ::Zip::RUNNING_ON_WINDOWS ? ::Zip::FSTYPE_FAT : ::Zip::FSTYPE_UNIX
 
-      @zipfile            = args[0] || ''
+      @zipfile            = zipfile || ''
       @name               = name
-      @comment            = args[2] || ''
-      @extra              = args[3] || ''
-      @compressed_size    = args[4] || 0
-      @crc                = args[5] || 0
-      @compression_method = args[6] || ::Zip::Entry::DEFLATED
-      @size               = args[7] || 0
-      @time               = args[8] || ::Zip::DOSTime.now
+
+      if (args_hash = args.first).kind_of?(::Hash)
+        @comment            = args_hash[:comment] || ''
+        @extra              = args_hash[:extra] || ''
+        @compressed_size    = args_hash[:compressed_size] || 0
+        @crc                = args_hash[:crc] || 0
+        @compression_method = args_hash[:compression_method] || ::Zip::Entry::DEFLATED
+        @size               = args_hash[:size] || 0
+        @time               = args_hash[:time] || ::Zip::DOSTime.now
+      else
+        Zip.warn_about_v3_api('Zip::Entry.new') unless args.empty?
+
+        @comment            = args[0] || ''
+        @extra              = args[1] || ''
+        @compressed_size    = args[2] || 0
+        @crc                = args[3] || 0
+        @compression_method = args[4] || ::Zip::Entry::DEFLATED
+        @size               = args[5] || 0
+        @time               = args[6] || ::Zip::DOSTime.now
+      end
 
       @ftype = name_is_directory? ? :directory : :file
       @extra = ::Zip::ExtraField.new(@extra.to_s) unless @extra.kind_of?(::Zip::ExtraField)
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
     def encrypted?
       gp_flags & 1 == 1
@@ -174,6 +189,8 @@ module Zip
     # NB: The caller is responsible for making sure dest_path is safe, if it
     # is passed.
     def extract(dest_path = nil, &block)
+      Zip.warn_about_v3_api('Zip::Entry#extract')
+
       if dest_path.nil? && !name_safe?
         warn "WARNING: skipped '#{@name}' as unsafe."
         return self
@@ -185,6 +202,28 @@ module Zip
       raise "unknown file type #{inspect}" unless directory? || file? || symlink?
 
       __send__("create_#{@ftype}", dest_path, &block)
+      self
+    end
+
+    # Extracts this entry to a file at `entry_path`, with
+    # `destination_directory` as the base location in the filesystem.
+    #
+    # NB: The caller is responsible for making sure `destination_directory` is
+    # safe, if it is passed.
+    def extract_v3(entry_path = @name, destination_directory: '.', &block)
+      dest_dir = ::File.absolute_path(destination_directory || '.')
+      extract_path = ::File.absolute_path(::File.join(dest_dir, entry_path))
+
+      unless extract_path.start_with?(dest_dir)
+        warn "WARNING: skipped extracting '#{@name}' to '#{extract_path}' as unsafe."
+        return self
+      end
+
+      block ||= proc { ::Zip.on_exists_proc }
+
+      raise "unknown file type #{inspect}" unless directory? || file? || symlink?
+
+      __send__(:"create_#{ftype}", extract_path, &block)
       self
     end
 
@@ -506,7 +545,7 @@ module Zip
       keys_equal = %w[compression_method crc compressed_size size name extra filepath].all? do |k|
         other.__send__(k.to_sym) == __send__(k.to_sym)
       end
-      keys_equal && time.dos_equals(other.time)
+      keys_equal && time == other.time
     end
 
     def <=>(other)
@@ -532,7 +571,7 @@ module Zip
           raise "unknown @file_type #{@ftype}"
         end
       else
-        zis = ::Zip::InputStream.new(@zipfile, local_header_offset)
+        zis = ::Zip::InputStream.new(@zipfile, offset: local_header_offset)
         zis.instance_variable_set(:@complete_entry, self)
         zis.get_next_entry
         if block_given?

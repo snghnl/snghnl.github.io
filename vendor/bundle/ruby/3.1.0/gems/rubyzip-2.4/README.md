@@ -1,7 +1,7 @@
 # rubyzip
 
 [![Gem Version](https://badge.fury.io/rb/rubyzip.svg)](http://badge.fury.io/rb/rubyzip)
-[![Build Status](https://secure.travis-ci.org/rubyzip/rubyzip.svg)](http://travis-ci.org/rubyzip/rubyzip)
+[![Tests](https://github.com/rubyzip/rubyzip/actions/workflows/tests.yml/badge.svg)](https://github.com/rubyzip/rubyzip/actions/workflows/tests.yml)
 [![Code Climate](https://codeclimate.com/github/rubyzip/rubyzip.svg)](https://codeclimate.com/github/rubyzip/rubyzip)
 [![Coverage Status](https://img.shields.io/coveralls/rubyzip/rubyzip.svg)](https://coveralls.io/r/rubyzip/rubyzip?branch=master)
 
@@ -9,18 +9,26 @@ Rubyzip is a ruby library for reading and writing zip files.
 
 ## Important note
 
-The Rubyzip interface has changed!!! No need to do `require "zip/zip"` and `Zip` prefix in class names removed.
+Rubyzip 2.4 is intended to be the last release in the 2.x series. Please get ready for version 3.0.
 
-If you have issues with any third-party gems that require an old version of rubyzip, you can use this workaround:
+### Updating to version 3.0
 
-```ruby
-gem 'rubyzip', '>= 1.0.0' # will load new rubyzip version
-gem 'zip-zip' # will load compatibility for old rubyzip API.
-```
+The public API of some classes has been modernized to use named parameters for optional arguments. Also some methods have been changed or removed. Please check your usage of the following Rubyzip classes:
+* `File`
+* `Entry`
+* `InputStream`
+* `OutputStream`
+* `DOSTime`
+
+**Please see [Updating to version 3.x](https://github.com/rubyzip/rubyzip/wiki/Updating-to-version-3.x) in the wiki for details.**
 
 ## Requirements
 
-- Ruby 2.4 or greater (for rubyzip 2.0; use 1.x for older rubies)
+Version 3.x requires at least Ruby 3.0.
+
+Version 2.x requires at least Ruby 2.4, and is known to work on Ruby 3.x.
+
+It is not recommended to use any versions of Rubyzip earlier than 2.3 due to security issues.
 
 ## Installation
 
@@ -188,7 +196,7 @@ If `::Zip::InputStream` finds such entry in the zip archive it will raise an exc
 Rubyzip supports reading/writing zip files with traditional zip encryption (a.k.a. "ZipCrypto"). AES encryption is not yet supported. It can be used with buffer streams, e.g.:
 
 ```ruby
-Zip::OutputStream.write_buffer(::StringIO.new(''), Zip::TraditionalEncrypter.new('password')) do |out|
+Zip::OutputStream.write_buffer(::StringIO.new, Zip::TraditionalEncrypter.new('password')) do |out|
   out.put_next_entry("my_file.txt")
   out.write my_data
 end.string
