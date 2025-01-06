@@ -1,15 +1,15 @@
 # -*- encoding: utf-8 -*-
-# stub: rubyzip 2.4 ruby lib
+# stub: rubyzip 2.4.1 ruby lib
 
 Gem::Specification.new do |s|
   s.name = "rubyzip".freeze
-  s.version = "2.4"
+  s.version = "2.4.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0".freeze) if s.respond_to? :required_rubygems_version=
-  s.metadata = { "bug_tracker_uri" => "https://github.com/rubyzip/rubyzip/issues", "changelog_uri" => "https://github.com/rubyzip/rubyzip/blob/v2.4/Changelog.md", "documentation_uri" => "https://www.rubydoc.info/gems/rubyzip/2.4", "source_code_uri" => "https://github.com/rubyzip/rubyzip/tree/v2.4", "wiki_uri" => "https://github.com/rubyzip/rubyzip/wiki" } if s.respond_to? :metadata=
+  s.metadata = { "bug_tracker_uri" => "https://github.com/rubyzip/rubyzip/issues", "changelog_uri" => "https://github.com/rubyzip/rubyzip/blob/v2.4.1/Changelog.md", "documentation_uri" => "https://www.rubydoc.info/gems/rubyzip/2.4.1", "rubygems_mfa_required" => "true", "source_code_uri" => "https://github.com/rubyzip/rubyzip/tree/v2.4.1", "wiki_uri" => "https://github.com/rubyzip/rubyzip/wiki" } if s.respond_to? :metadata=
   s.require_paths = ["lib".freeze]
   s.authors = ["Robert Haines".freeze, "John Lees-Miller".freeze, "Alexander Simonov".freeze]
-  s.date = "2025-01-04"
+  s.date = "2025-01-05"
   s.email = ["hainesr@gmail.com".freeze, "jdleesmiller@gmail.com".freeze, "alex@simonov.me".freeze]
   s.homepage = "http://github.com/rubyzip/rubyzip".freeze
   s.licenses = ["BSD 2-Clause".freeze]
