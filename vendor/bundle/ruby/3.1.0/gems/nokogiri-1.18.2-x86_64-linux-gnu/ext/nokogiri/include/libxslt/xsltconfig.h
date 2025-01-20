@@ -112,7 +112,7 @@ extern "C" {
 #ifndef WITH_MODULES
 #define WITH_MODULES
 #endif
-#define LIBXSLT_DEFAULT_PLUGINS_PATH() "/home/flavorjones/code/oss/nokogiri/ports/arm-linux-musl/libxslt/1.1.42/lib/libxslt-plugins"
+#define LIBXSLT_DEFAULT_PLUGINS_PATH() "/home/flavorjones/code/oss/nokogiri/ports/aarch64-linux-gnu/libxslt/1.1.42/lib/libxslt-plugins"
 #endif
 
 /**
