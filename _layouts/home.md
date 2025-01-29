@@ -12,7 +12,7 @@ layout: main
 - C
 
 ### Career
-- 공군 지능정보체계관리단 AI신기술체계개발대 RPA개발팀 (2023.06~)
+- 공군 지능정보체계관리단 AI신기술체계개발대 RPA개발팀 (2023.06 ~ 2025.01)
 
   : I am developing RPA programs for automating lots of affairs in ROKAF.
 
