@@ -1,15 +1,15 @@
 # -*- encoding: utf-8 -*-
-# stub: dnsruby 1.72.3 ruby lib
+# stub: dnsruby 1.72.4 ruby lib
 
 Gem::Specification.new do |s|
   s.name = "dnsruby".freeze
-  s.version = "1.72.3"
+  s.version = "1.72.4"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0".freeze) if s.respond_to? :required_rubygems_version=
   s.metadata = { "bug_tracker_uri" => "https://github.com/alexdalitz/dnsruby/issues", "changelog_uri" => "https://github.com/alexdalitz/dnsruby/blob/master/RELEASE_NOTES.md", "documentation_uri" => "https://www.rubydoc.info/gems/dnsruby/", "homepage_uri" => "https://github.com/alexdalitz/dnsruby", "source_code_uri" => "https://github.com/alexdalitz/dnsruby", "yard.run" => "yard" } if s.respond_to? :metadata=
   s.require_paths = ["lib".freeze]
   s.authors = ["Alex Dalitz".freeze]
-  s.date = "2024-11-19"
+  s.date = "2025-03-01"
   s.description = "Dnsruby is a pure Ruby DNS client library which implements a\nstub resolver. It aims to comply with all DNS RFCs, including\nDNSSEC NSEC3 support.".freeze
   s.email = "alex@caerkettontech.com".freeze
   s.extra_rdoc_files = ["DNSSEC".freeze, "EXAMPLES".freeze, "README.md".freeze, "EVENTMACHINE".freeze]
@@ -35,6 +35,7 @@ Gem::Specification.new do |s|
     s.add_development_dependency(%q<yard>.freeze, [">= 0.9"])
     s.add_development_dependency(%q<coveralls>.freeze, ["~> 0.8.23"])
     s.add_runtime_dependency(%q<base64>.freeze, ["~> 0.2.0"])
+    s.add_runtime_dependency(%q<logger>.freeze, ["~> 1.6.5"])
     s.add_runtime_dependency(%q<simpleidn>.freeze, ["~> 0.2.1"])
   else
     s.add_dependency(%q<rake>.freeze, [">= 13.0.6"])
@@ -45,6 +46,7 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<yard>.freeze, [">= 0.9"])
     s.add_dependency(%q<coveralls>.freeze, ["~> 0.8.23"])
     s.add_dependency(%q<base64>.freeze, ["~> 0.2.0"])
+    s.add_dependency(%q<logger>.freeze, ["~> 1.6.5"])
     s.add_dependency(%q<simpleidn>.freeze, ["~> 0.2.1"])
   end
 end
