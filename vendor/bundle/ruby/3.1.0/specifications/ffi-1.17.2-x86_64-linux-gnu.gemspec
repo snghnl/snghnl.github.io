@@ -1,16 +1,16 @@
 # -*- encoding: utf-8 -*-
-# stub: ffi 1.17.1 x86_64-linux-gnu lib
+# stub: ffi 1.17.2 x86_64-linux-gnu lib
 
 Gem::Specification.new do |s|
   s.name = "ffi".freeze
-  s.version = "1.17.1"
+  s.version = "1.17.2"
   s.platform = "x86_64-linux-gnu".freeze
 
   s.required_rubygems_version = Gem::Requirement.new(">= 3.3.22".freeze) if s.respond_to? :required_rubygems_version=
   s.metadata = { "bug_tracker_uri" => "https://github.com/ffi/ffi/issues", "changelog_uri" => "https://github.com/ffi/ffi/blob/master/CHANGELOG.md", "documentation_uri" => "https://github.com/ffi/ffi/wiki", "mailing_list_uri" => "http://groups.google.com/group/ruby-ffi", "source_code_uri" => "https://github.com/ffi/ffi/", "wiki_uri" => "https://github.com/ffi/ffi/wiki" } if s.respond_to? :metadata=
   s.require_paths = ["lib".freeze]
   s.authors = ["Wayne Meissner".freeze]
-  s.date = "2024-12-30"
+  s.date = "2025-04-15"
   s.description = "Ruby FFI library".freeze
   s.email = "wmeissner@gmail.com".freeze
   s.homepage = "https://github.com/ffi/ffi/wiki".freeze
