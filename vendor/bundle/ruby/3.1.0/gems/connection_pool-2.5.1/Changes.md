@@ -1,5 +1,12 @@
 # connection_pool Changelog
 
+2.5.1
+------
+
+- Pass options to TimedStack in `checkout` [#195]
+- Optimize connection lookup [#196]
+- Fixes for use with Ractors
+
 2.5.0
 ------
 

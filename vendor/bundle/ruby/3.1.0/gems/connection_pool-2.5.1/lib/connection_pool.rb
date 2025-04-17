@@ -39,7 +39,7 @@ end
 # - :auto_reload_after_fork - automatically drop all connections after fork, defaults to true
 #
 class ConnectionPool
-  DEFAULTS = {size: 5, timeout: 5, auto_reload_after_fork: true}
+  DEFAULTS = {size: 5, timeout: 5, auto_reload_after_fork: false}.freeze
 
   def self.wrap(options, &block)
     Wrapper.new(options, &block)
@@ -99,7 +99,7 @@ class ConnectionPool
     @available = TimedStack.new(@size, &block)
     @key = :"pool-#{@available.object_id}"
     @key_count = :"pool-#{@available.object_id}-count"
-    INSTANCES[self] = self if INSTANCES
+    INSTANCES[self] = self if @auto_reload_after_fork
   end
 
   def with(options = {})
@@ -122,7 +122,7 @@ class ConnectionPool
       ::Thread.current[@key]
     else
       ::Thread.current[@key_count] = 1
-      ::Thread.current[@key] = @available.pop(options[:timeout] || @timeout)
+      ::Thread.current[@key] = @available.pop(options[:timeout] || @timeout, options)
     end
   end
 
@@ -146,7 +146,6 @@ class ConnectionPool
   # Shuts down the ConnectionPool by passing each connection to +block+ and
   # then removing it from the pool. Attempting to checkout a connection after
   # shutdown will raise +ConnectionPool::PoolShuttingDownError+.
-
   def shutdown(&block)
     @available.shutdown(&block)
   end
@@ -155,7 +154,6 @@ class ConnectionPool
   # Reloads the ConnectionPool by passing each connection to +block+ and then
   # removing it the pool. Subsequent checkouts will create new connections as
   # needed.
-
   def reload(&block)
     @available.shutdown(reload: true, &block)
   end
