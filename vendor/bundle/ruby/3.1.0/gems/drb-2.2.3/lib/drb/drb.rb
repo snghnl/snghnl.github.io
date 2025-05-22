@@ -35,11 +35,11 @@
 # [http://www2a.biglobe.ne.jp/~seki/ruby/druby.en.html]
 #    The English version of the dRuby home page.
 #
-# [http://pragprog.com/book/sidruby/the-druby-book]
+# [https://web.archive.org/web/20160611151955/https://pragprog.com/book/sidruby/the-druby-book]
 #    The dRuby Book: Distributed and Parallel Computing with Ruby
 #    by Masatoshi Seki and Makoto Inoue
 #
-# [http://www.ruby-doc.org/docs/ProgrammingRuby/html/ospace.html]
+# [http://ruby-doc.com/docs/ProgrammingRuby/html/ospace.html]
 #   The chapter from *Programming* *Ruby* by Dave Thomas and Andy Hunt
 #   which discusses dRuby.
 #
@@ -348,6 +348,39 @@ module DRb
   # protocol.
   class DRbConnError < DRbError; end
 
+  class DRbObjectSpace # :nodoc:
+    # This is an internal class for DRbIdConv. This must not be used
+    # by users.
+
+    include MonitorMixin
+
+    def initialize
+      super()
+      @map = ObjectSpace::WeakMap.new
+    end
+
+    def to_id(obj)
+      synchronize do
+        @map[obj.__id__] = obj
+        obj.__id__
+      end
+    end
+
+    def to_obj(ref)
+      synchronize do
+        obj = @map[ref]
+        raise RangeError.new("invalid reference") unless obj.__id__ == ref
+        obj
+      end
+    end
+  end
+
+  # :nodoc:
+  #
+  # This is an internal singleton instance. This must not be used
+  # by users.
+  DRB_OBJECT_SPACE = DRbObjectSpace.new
+
   # Class responsible for converting between an object and its id.
   #
   # This, the default implementation, uses an object's local ObjectSpace
@@ -364,7 +397,7 @@ module DRb
     # This implementation looks up the reference id in the local object
     # space and returns the object it refers to.
     def to_obj(ref)
-      ObjectSpace._id2ref(ref)
+      DRB_OBJECT_SPACE.to_obj(ref)
     end
 
     # Convert an object into a reference id.
@@ -372,12 +405,7 @@ module DRb
     # This implementation returns the object's __id__ in the local
     # object space.
     def to_id(obj)
-      case obj
-      when Object
-        obj.nil? ? nil : obj.__id__
-      when BasicObject
-        obj.__id__
-      end
+      (nil == obj) ? nil : DRB_OBJECT_SPACE.to_id(obj)
     end
   end
 
@@ -1673,6 +1701,33 @@ module DRb
         check_insecure_method
       end
 
+      def block_yield(x)
+        if x.size == 1 && x[0].class == Array
+          x[0] = DRbArray.new(x[0])
+        end
+        @block.call(*x)
+      end
+
+      def perform_with_block
+        @obj.__send__(@msg_id, *@argv) do |*x|
+          jump_error = nil
+          begin
+            block_value = block_yield(x)
+          rescue LocalJumpError
+            jump_error = $!
+          end
+          if jump_error
+            case jump_error.reason
+            when :break
+              break(jump_error.exit_value)
+            else
+              raise jump_error
+            end
+          end
+          block_value
+        end
+      end
+
       def perform_without_block
         if Proc === @obj && @msg_id == :__drb_yield
           if @argv.size == 1
@@ -1686,11 +1741,6 @@ module DRb
         end
       end
 
-    end
-
-    require_relative 'invokemethod'
-    class InvokeMethod
-      include InvokeMethod18Mixin
     end
 
     def error_print(exception)

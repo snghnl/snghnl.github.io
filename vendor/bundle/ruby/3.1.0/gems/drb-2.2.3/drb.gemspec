@@ -18,6 +18,8 @@ Gem::Specification.new do |spec|
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = spec.homepage
+  spec.metadata["changelog_uri"] =
+    "#{spec.homepage}/releases/tag/v#{spec.version}"
 
   spec.files         = %w[
     LICENSE.txt
@@ -29,7 +31,6 @@ Gem::Specification.new do |spec|
     lib/drb/extserv.rb
     lib/drb/extservm.rb
     lib/drb/gw.rb
-    lib/drb/invokemethod.rb
     lib/drb/observer.rb
     lib/drb/ssl.rb
     lib/drb/timeridconv.rb
