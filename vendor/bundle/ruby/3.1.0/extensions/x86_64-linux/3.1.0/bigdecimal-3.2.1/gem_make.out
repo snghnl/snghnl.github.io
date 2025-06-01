@@ -1,4 +1,4 @@
-current directory: /home/runner/work/snghnl.github.io/snghnl.github.io/vendor/bundle/ruby/3.1.0/gems/bigdecimal-3.2.0/ext/bigdecimal
+current directory: /home/runner/work/snghnl.github.io/snghnl.github.io/vendor/bundle/ruby/3.1.0/gems/bigdecimal-3.2.1/ext/bigdecimal
 /opt/hostedtoolcache/Ruby/3.1.4/x64/bin/ruby -I /opt/hostedtoolcache/Ruby/3.1.4/x64/lib/ruby/3.1.0 extconf.rb
 checking for __builtin_clz()... yes
 checking for __builtin_clzl()... yes
@@ -27,15 +27,15 @@ checking for rb_category_warn() in ruby.h... yes
 checking for RB_WARN_CATEGORY_DEPRECATED in ruby.h... yes
 creating Makefile
 
-current directory: /home/runner/work/snghnl.github.io/snghnl.github.io/vendor/bundle/ruby/3.1.0/gems/bigdecimal-3.2.0/ext/bigdecimal
-make DESTDIR\= sitearchdir\=./.gem.20250530-2300-a8ohbd sitelibdir\=./.gem.20250530-2300-a8ohbd clean
+current directory: /home/runner/work/snghnl.github.io/snghnl.github.io/vendor/bundle/ruby/3.1.0/gems/bigdecimal-3.2.1/ext/bigdecimal
+make DESTDIR\= sitearchdir\=./.gem.20250601-2420-mc1g2v sitelibdir\=./.gem.20250601-2420-mc1g2v clean
 
-current directory: /home/runner/work/snghnl.github.io/snghnl.github.io/vendor/bundle/ruby/3.1.0/gems/bigdecimal-3.2.0/ext/bigdecimal
-make DESTDIR\= sitearchdir\=./.gem.20250530-2300-a8ohbd sitelibdir\=./.gem.20250530-2300-a8ohbd
+current directory: /home/runner/work/snghnl.github.io/snghnl.github.io/vendor/bundle/ruby/3.1.0/gems/bigdecimal-3.2.1/ext/bigdecimal
+make DESTDIR\= sitearchdir\=./.gem.20250601-2420-mc1g2v sitelibdir\=./.gem.20250601-2420-mc1g2v
 compiling bigdecimal.c
 compiling missing.c
 linking shared-object bigdecimal.so
 
-current directory: /home/runner/work/snghnl.github.io/snghnl.github.io/vendor/bundle/ruby/3.1.0/gems/bigdecimal-3.2.0/ext/bigdecimal
-make DESTDIR\= sitearchdir\=./.gem.20250530-2300-a8ohbd sitelibdir\=./.gem.20250530-2300-a8ohbd install
-/usr/bin/install -c -m 0755 bigdecimal.so ./.gem.20250530-2300-a8ohbd
+current directory: /home/runner/work/snghnl.github.io/snghnl.github.io/vendor/bundle/ruby/3.1.0/gems/bigdecimal-3.2.1/ext/bigdecimal
+make DESTDIR\= sitearchdir\=./.gem.20250601-2420-mc1g2v sitelibdir\=./.gem.20250601-2420-mc1g2v install
+/usr/bin/install -c -m 0755 bigdecimal.so ./.gem.20250601-2420-mc1g2v

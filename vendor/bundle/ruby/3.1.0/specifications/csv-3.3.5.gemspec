@@ -1,15 +1,15 @@
 # -*- encoding: utf-8 -*-
-# stub: csv 3.3.4 ruby lib
+# stub: csv 3.3.5 ruby lib
 
 Gem::Specification.new do |s|
   s.name = "csv".freeze
-  s.version = "3.3.4"
+  s.version = "3.3.5"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0".freeze) if s.respond_to? :required_rubygems_version=
-  s.metadata = { "changelog_uri" => "https://github.com/ruby/csv/releases/tag/v3.3.4" } if s.respond_to? :metadata=
+  s.metadata = { "changelog_uri" => "https://github.com/ruby/csv/releases/tag/v3.3.5" } if s.respond_to? :metadata=
   s.require_paths = ["lib".freeze]
   s.authors = ["James Edward Gray II".freeze, "Kouhei Sutou".freeze]
-  s.date = "2025-04-13"
+  s.date = "1980-01-02"
   s.description = "The CSV library provides a complete interface to CSV files and data. It offers tools to enable you to read and write to and from Strings or IO objects, as needed.".freeze
   s.email = [nil, "kou@cozmixng.org".freeze]
   s.extra_rdoc_files = ["LICENSE.txt".freeze, "NEWS.md".freeze, "README.md".freeze, "doc/csv/recipes/filtering.rdoc".freeze, "doc/csv/recipes/generating.rdoc".freeze, "doc/csv/recipes/parsing.rdoc".freeze, "doc/csv/recipes/recipes.rdoc".freeze]

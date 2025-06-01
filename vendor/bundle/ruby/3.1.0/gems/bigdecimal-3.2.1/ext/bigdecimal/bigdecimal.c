@@ -31,7 +31,7 @@
 #include "bits.h"
 #include "static_assert.h"
 
-#define BIGDECIMAL_VERSION "3.2.0"
+#define BIGDECIMAL_VERSION "3.2.1"
 
 /* #define ENABLE_NUMERIC_STRING */
 
@@ -2151,6 +2151,7 @@ BigDecimal_div2(VALUE self, VALUE b, VALUE n)
     ix = check_int_precision(n);
 
     pl = VpSetPrecLimit(0);
+    if (ix == 0) ix = pl;
 
     GUARD_OBJ(av, GetVpValue(self, 1));
     if (RB_FLOAT_TYPE_P(b) && ix > BIGDECIMAL_DOUBLE_FIGURES) {
