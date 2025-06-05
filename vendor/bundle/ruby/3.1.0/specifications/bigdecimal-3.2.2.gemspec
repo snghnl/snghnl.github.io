@@ -1,10 +1,10 @@
 # -*- encoding: utf-8 -*-
-# stub: bigdecimal 3.2.1 ruby lib
+# stub: bigdecimal 3.2.2 ruby lib
 # stub: ext/bigdecimal/extconf.rb
 
 Gem::Specification.new do |s|
   s.name = "bigdecimal".freeze
-  s.version = "3.2.1"
+  s.version = "3.2.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0".freeze) if s.respond_to? :required_rubygems_version=
   s.metadata = { "changelog_uri" => "https://github.com/ruby/bigdecimal/blob/master/CHANGES.md" } if s.respond_to? :metadata=

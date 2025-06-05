@@ -31,7 +31,7 @@
 #include "bits.h"
 #include "static_assert.h"
 
-#define BIGDECIMAL_VERSION "3.2.1"
+#define BIGDECIMAL_VERSION "3.2.2"
 
 /* #define ENABLE_NUMERIC_STRING */
 
@@ -513,15 +513,10 @@ BigDecimal_prec(VALUE self)
 }
 
 static void
-BigDecimal_count_precision_and_scale(VALUE self, ssize_t *out_precision, ssize_t *out_scale)
+VpCountPrecisionAndScale(Real *p, ssize_t *out_precision, ssize_t *out_scale)
 {
-    ENTER(1);
-
     if (out_precision == NULL && out_scale == NULL)
         return;
-
-    Real *p;
-    GUARD_OBJ(p, GetVpValue(self, 1));
     if (VpIsZero(p) || !VpIsDef(p)) {
       zero:
         if (out_precision) *out_precision = 0;
@@ -623,6 +618,15 @@ BigDecimal_count_precision_and_scale(VALUE self, ssize_t *out_precision, ssize_t
 
         *out_scale = scale;
     }
+}
+
+static void
+BigDecimal_count_precision_and_scale(VALUE self, ssize_t *out_precision, ssize_t *out_scale)
+{
+    ENTER(1);
+    Real *p;
+    GUARD_OBJ(p, GetVpValue(self, 1));
+    VpCountPrecisionAndScale(p, out_precision, out_scale);
 }
 
 /*
@@ -2166,8 +2170,8 @@ BigDecimal_div2(VALUE self, VALUE b, VALUE n)
 
     if (ix == 0) {
         ssize_t a_prec, b_prec;
-        BigDecimal_count_precision_and_scale(av->obj, &a_prec, NULL);
-        BigDecimal_count_precision_and_scale(bv->obj, &b_prec, NULL);
+        VpCountPrecisionAndScale(av, &a_prec, NULL);
+        VpCountPrecisionAndScale(bv, &b_prec, NULL);
         ix = ((a_prec > b_prec) ? a_prec : b_prec) + BIGDECIMAL_DOUBLE_FIGURES;
         if (2 * BIGDECIMAL_DOUBLE_FIGURES > ix)
             ix = 2 * BIGDECIMAL_DOUBLE_FIGURES;
