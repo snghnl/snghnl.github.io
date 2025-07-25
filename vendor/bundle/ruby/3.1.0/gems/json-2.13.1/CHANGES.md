@@ -2,7 +2,11 @@
 
 ### Unreleased
 
-### 2025-05-23 (2.13.0)
+### 2025-07-24 (2.13.1)
+
+* Fix support for older compilers without `__builtin_cpu_supports`.
+
+### 2025-07-17 (2.13.0)
 
 * Add new `allow_duplicate_key` parsing options. By default a warning is now emitted when a duplicated key is encountered.
   In `json 3.0` an error will be raised.
