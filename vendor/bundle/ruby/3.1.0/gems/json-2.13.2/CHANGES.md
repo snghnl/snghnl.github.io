@@ -2,6 +2,10 @@
 
 ### Unreleased
 
+### 2025-07-28 (2.13.2)
+
+* Improve duplicate key warning and errors to include the key name and point to the right caller.
+
 ### 2025-07-24 (2.13.1)
 
 * Fix support for older compilers without `__builtin_cpu_supports`.
